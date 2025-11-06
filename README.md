@@ -1,16 +1,47 @@
-# Asongs
+# Asongs🎶
+<img src="lib\assets\asong.png" width="30%"/> 
 
-Asongs by ashish.
+Asongs by [ashish.](https://github.com/maxx4688)
 
-## Getting Started
+This is an offline music player with all the necessary feature for enjoying your music.
 
-This project is a starting point for a Flutter application.
+> [Get ASongs](https://github.com/maxx4688/Asongs/releases)
 
-A few resources to get you started if this is your first Flutter project:
+## Clone the project
+-  Paste the code below in your terminal to clone the project.
+```json
+git clone https://github.com/maxx4688/Asongs.git
+```
+ -  Create new branch
+```json
+git checkout -b branch_name
+```
+-  Get the dependencies.
+  ```json
+  flutter pub get
+  ```
+- Lastly run the app
+```json
+  flutter run
+  ```
+ > Make sure to push the changes in your seperate branch to avoid conflicts.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## Push your changes
+- In order to push your codes run the below codes in your code editor terminal.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```json
+git add .
+git commit -m "changes comment goes here"
+git push origin your_branch_name
+```
+
+### Made by ashish.
+<details>
+<summary>Social Media</summary>
+
+| Platfarm | Links |
+|-----:|-----------|
+|   Instagram|[Open](https://www.instagram.com/maxx4688)|
+|   X (Twitter)|[Open](https://x.com/maxx4688)|
+|   BMC|[Open](https://buymeacoffee.com/maxx4688)|
+</details>

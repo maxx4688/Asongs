@@ -19,11 +19,9 @@ class NowPlaying extends StatefulWidget {
 
 class _NowPlayingState extends State<NowPlaying> {
   late AudioPlayerProvider audioProvider;
-  // local drag state for seek slider to avoid heavy frequent provider calls
   bool _isSeeking = false;
   double _seekValue = 0.0;
 
-  // local drag state for volume slider to avoid lag and frequent system calls
   bool _isChangingVolume = false;
   double _localVolume = 1.0;
 
@@ -175,7 +173,9 @@ class _NowPlayingState extends State<NowPlaying> {
                       children: [
                         const SizedBox(width: 15),
                         CupertinoButton(
-                          color: Colors.white12,
+                          color: provider.isLoopAll
+                              ? mainColour.withAlpha(50)
+                              : Colors.white12,
                           padding: const EdgeInsets.all(7),
                           sizeStyle: CupertinoButtonSize.small,
                           child: Icon(

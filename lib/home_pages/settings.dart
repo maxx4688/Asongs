@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:jobee_server/provider/user_provider.dart';
+import 'package:jobee_server/provider/audio_provider.dart';
 import 'package:jobee_server/theme/theme_data.dart';
 import 'package:jobee_server/theme/theme_provider.dart';
 import 'package:provider/provider.dart';
@@ -69,6 +70,27 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ),
           ListTile(
+            leading: const Icon(
+              Icons.audio_file_outlined,
+              color: mainColour,
+            ),
+            title: const Text('No ringtones'),
+            trailing: Switch(
+              activeColor: mainColour,
+              inactiveThumbColor: Colors.black12,
+              trackOutlineColor: const WidgetStatePropertyAll(Colors.black12),
+              value: userPro.excludeShortSongs,
+              onChanged: (value) async {
+                await userPro.setExcludeShortSongs(value);
+                try {
+                  final audioProv =
+                      Provider.of<AudioPlayerProvider>(context, listen: false);
+                  await audioProv.loadSongs();
+                } catch (_) {}
+              },
+            ),
+          ),
+          ListTile(
             onTap: () {
               showDialog(
                 context: context,
@@ -131,6 +153,40 @@ class _SettingsPageState extends State<SettingsPage> {
                 color: Colors.grey,
               ),
             ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.code, color: mainColour),
+            title: const Text("Repository"),
+            subtitle: Text(
+              "https://github.com/maxx4688/Asongs",
+              style: TextStyle(
+                color: Colors.grey.withAlpha(100),
+              ),
+            ),
+          ),
+          SizedBox(
+            height: MediaQuery.of(context).size.width / 4,
+          ),
+          Container(
+            width: MediaQuery.of(context).size.width / 2.5,
+            height: MediaQuery.of(context).size.width / 2.5,
+            clipBehavior: Clip.hardEdge,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(30),
+            ),
+            child: Image.asset("lib/assets/asong.png"),
+          ),
+          const Text(
+            "Asongs",
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+              color: Colors.grey,
+            ),
+          ),
+          const Text(
+            "Made in India by Ashish.",
+            style: TextStyle(),
           ),
         ],
       ),

@@ -5,30 +5,26 @@ import 'package:just_audio/just_audio.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:volume_controller/volume_controller.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AudioPlayerProvider extends ChangeNotifier {
   final AudioPlayer _player = AudioPlayer();
   final OnAudioQuery _audioQuery = OnAudioQuery();
 
-  // Current playback state
   bool _isPlaying = false;
-  // loop mode: off / one / all
   LoopMode _loopMode = LoopMode.off;
   Duration _position = Duration.zero;
   Duration _duration = Duration.zero;
   double _volume = 1.0;
 
-  // Current song and playlist
   List<SongModel> _songs = [];
   SongModel? _currentSong;
   int _currentIndex = -1;
 
-  // Subscriptions
   StreamSubscription<Duration>? _positionSubscription;
   StreamSubscription<Duration?>? _durationSubscription;
   StreamSubscription<bool>? _playingSubscription;
 
-  // Getters
   bool get isPlaying => _isPlaying;
   LoopMode get loopMode => _loopMode;
   bool get isRepeatOne => _loopMode == LoopMode.one;
@@ -47,13 +43,11 @@ class AudioPlayerProvider extends ChangeNotifier {
   }
 
   void _init() {
-    // Listen to position changes
     _positionSubscription = _player.positionStream.listen((pos) {
       _position = pos;
       notifyListeners();
     });
 
-    // Listen to duration changes
     _durationSubscription = _player.durationStream.listen((dur) {
       _duration = dur ?? Duration.zero;
       notifyListeners();
@@ -118,12 +112,29 @@ class AudioPlayerProvider extends ChangeNotifier {
         }
       }
 
-      _songs = await _audioQuery.querySongs(
+      final raw = await _audioQuery.querySongs(
         sortType: SongSortType.DATE_ADDED,
         orderType: OrderType.DESC_OR_GREATER,
         uriType: UriType.EXTERNAL,
         ignoreCase: true,
       );
+
+      // Respect user preference to exclude short songs (< 15s)
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final excludeShort = prefs.getBool('exclude_short_songs') ?? false;
+        if (excludeShort) {
+          _songs = raw.where((s) {
+            final dur = s.duration ?? 0;
+            return dur >= 15000;
+          }).toList();
+        } else {
+          _songs = raw;
+        }
+      } catch (e) {
+        _songs = raw;
+      }
+
       notifyListeners();
     } catch (e) {
       debugPrint('Error loading songs: $e');
