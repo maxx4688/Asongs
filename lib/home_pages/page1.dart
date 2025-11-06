@@ -1,9 +1,7 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:jobee_server/now_playing.dart';
 import 'package:jobee_server/provider/audio_provider.dart';
-import 'package:jobee_server/theme/theme_data.dart';
-import 'package:permission_handler/permission_handler.dart';
+import 'package:on_audio_query/on_audio_query.dart';
 import 'package:provider/provider.dart';
 
 class Page1 extends StatefulWidget {
@@ -14,122 +12,87 @@ class Page1 extends StatefulWidget {
 }
 
 class Page1State extends State<Page1> {
-  List<File> audioFiles = [];
+  late AudioPlayerProvider audioProvider;
 
   @override
   void initState() {
-    requestStoragePermission();
     super.initState();
-  }
-
-  Future<void> requestStoragePermission() async {
-    if (await Permission.storage.isGranted ||
-        await Permission.mediaLibrary.isGranted) {
-      print("Storage permission already granted");
-      loadAudioFiles();
-      return;
-    }
-
-    if (await Permission.storage.status.isDenied ||
-        await Permission.storage.status.isRestricted) {
-      PermissionStatus status = await Permission.storage.request();
-
-      if (status.isGranted) {
-        print("Storage permission granted");
-        loadAudioFiles();
-      } else if (status.isPermanentlyDenied) {
-        print(
-            "Storage permission permanently denied. Redirecting to settings.");
-        openAppSettings();
-      } else {
-        print("Storage permission denied");
-      }
-    }
-  }
-
-  Future<List<File>> getAudioFiles() async {
-    List<File> audioFiles = [];
-
-    Directory directory =
-        Directory("/storage/emulated/0/snaptube/download/SnapTube Audio");
-
-    if (directory.existsSync()) {
-      List<FileSystemEntity> files = directory.listSync(recursive: true);
-      for (var file in files) {
-        if (file is File &&
-            (file.path.endsWith('.mp3') || file.path.endsWith('.wav'))) {
-          audioFiles.add(file);
-        }
-      }
-      audioFiles.sort(
-          (a, b) => b.statSync().modified.compareTo(a.statSync().modified));
-    }
-    return audioFiles;
-  }
-
-  Future<void> loadAudioFiles() async {
-    List<File> files = await getAudioFiles();
-    setState(() {
-      audioFiles = files;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      audioProvider = Provider.of<AudioPlayerProvider>(context, listen: false);
+      await audioProvider.loadSongs();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final audioProvider = Provider.of<AudioPlayerProvider>(context);
     return Scaffold(
-      body: audioFiles.isEmpty
-          ? const Center(child: Text("No songs found"))
-          : ListView.builder(
-              padding: const EdgeInsets.only(
-                top: 100,
-                left: 10,
-                right: 10,
-                bottom: 60,
-              ),
-              itemCount: audioFiles.length,
-              itemBuilder: (context, index) {
-                return Card(
-                  shadowColor: Colors.black26,
-                  elevation: 15,
-                  child: ListTile(
-                    leading: Icon(
-                      audioProvider.songName ==
-                              audioFiles[index].path.split('/').last
-                          ? Icons.music_note
-                          : Icons.music_note_outlined,
-                      color: audioProvider.songName ==
-                              audioFiles[index].path.split('/').last
-                          ? mainColour
-                          : null,
-                    ),
-                    title: Text(
-                      audioFiles[index].path.split('/').last,
-                      maxLines: 2,
-                      overflow: TextOverflow.fade,
-                      style: TextStyle(
-                        color: audioProvider.songName ==
-                                audioFiles[index].path.split('/').last
-                            ? mainColour
-                            : null,
+      body: Consumer<AudioPlayerProvider>(
+        builder: (context, provider, _) {
+          final songs = provider.songs;
+          return ListView.builder(
+            padding: const EdgeInsets.only(
+              top: 100,
+              left: 15,
+              right: 15,
+              bottom: 60,
+            ),
+            itemCount: songs.length,
+            itemBuilder: (context, index) {
+              return Card(
+                shadowColor: Colors.black26,
+                elevation: 15,
+                child: ListTile(
+                  leading: QueryArtworkWidget(
+                    key: ValueKey(songs[index].id),
+                    id: songs[index].id,
+                    type: ArtworkType.AUDIO,
+                    keepOldArtwork: true,
+                    artworkBorder: BorderRadius.circular(8),
+                    nullArtworkWidget: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                      height: 50,
+                      width: 50,
+                      child: Icon(
+                        Icons.music_note,
+                        color: Colors.grey[700],
                       ),
                     ),
-                    subtitle: const Text('song'),
-                    onTap: () {
-                      audioProvider.setAudioFile(audioFiles[index],
-                          songs: audioFiles);
-                      audioProvider.play();
+                  ),
+                  title: Text(
+                    songs[index].displayNameWOExt,
+                    maxLines: 2,
+                    overflow: TextOverflow.fade,
+                    style: const TextStyle(),
+                  ),
+                  subtitle: Text(
+                    songs[index].artist!,
+                    style: const TextStyle(
+                      color: Colors.grey,
+                    ),
+                  ),
+                  onTap: () {
+                    if (provider.currentSong?.id != songs[index].id) {
+                      provider.playSong(songs[index]);
+                    } else {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const NowPlaying(),
+                          builder: (context) => NowPlaying(
+                            songModel: songs[index],
+                          ),
                         ),
                       );
-                    },
-                  ),
-                );
-              },
-            ),
+                    }
+                  },
+                ),
+              );
+            },
+          );
+        },
+      ),
     );
   }
 }

@@ -1,7 +1,13 @@
+import 'dart:ui';
+
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:jobee_server/home_pages/page1.dart';
 import 'package:jobee_server/home_pages/page2.dart';
+import 'package:jobee_server/home_pages/settings.dart';
 import 'package:jobee_server/now_playing.dart';
+import 'package:jobee_server/provider/user_provider.dart';
+import 'package:on_audio_query/on_audio_query.dart';
 import 'package:jobee_server/provider/audio_provider.dart';
 import 'package:jobee_server/theme/theme_data.dart';
 import 'package:jobee_server/theme/theme_provider.dart';
@@ -11,7 +17,8 @@ void main() {
   runApp(MultiProvider(
     providers: [
       ChangeNotifierProvider(create: (context) => ThemeProvider()),
-      ChangeNotifierProvider(create: (context) => AudioPlayerProvider())
+      ChangeNotifierProvider(create: (context) => AudioPlayerProvider()),
+      ChangeNotifierProvider(create: (context) => UserProvider()),
     ],
     child: const MyApp(),
   ));
@@ -23,7 +30,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Asongs',
       theme: Provider.of<ThemeProvider>(context).themeData,
       home: const HomePage(),
     );
@@ -40,11 +47,8 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
-    final getTheme = Provider.of<ThemeProvider>(context);
     final audioData = Provider.of<AudioPlayerProvider>(context);
-    final tcolors = Theme.of(context).brightness == Brightness.light
-        ? Colors.black38
-        : Colors.white38;
+    final userPro = Provider.of<UserProvider>(context);
     return Scaffold(
       body: Stack(
         children: [
@@ -68,9 +72,9 @@ class _HomePageState extends State<HomePage> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Hey ash.',
-                        style: TextStyle(
+                      Text(
+                        'Hey ${userPro.username}',
+                        style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                           color: mainColour,
@@ -78,12 +82,15 @@ class _HomePageState extends State<HomePage> {
                       ),
                       GestureDetector(
                         onTap: () {
-                          getTheme.toggleTheme();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const SettingsPage(),
+                            ),
+                          );
                         },
-                        child: Icon(
-                          Theme.of(context).brightness == Brightness.light
-                              ? Icons.toggle_off
-                              : Icons.toggle_on,
+                        child: const Icon(
+                          CupertinoIcons.gear,
                           color: mainColour,
                         ),
                       )
@@ -93,82 +100,140 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
-        ],
-      ),
-      bottomSheet: GestureDetector(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const NowPlaying(),
-            ),
-          );
-        },
-        child: Hero(
-          tag: 'song',
-          child: AnimatedOpacity(
-            opacity: audioData.songName == "Song Name" ? 0.0 : 1.0,
-            duration: const Duration(milliseconds: 200),
-            child: Container(
-              padding: const EdgeInsets.only(right: 10.0, left: 10),
-              height: 80,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Card(
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
-                    elevation: 5,
-                    child: const SizedBox(
-                      height: 60,
-                      width: 60,
+          AnimatedSlide(
+            duration: const Duration(milliseconds: 700),
+            curve: Curves.elasticOut,
+            offset: audioData.currentSong == null
+                ? const Offset(0, 1.5)
+                : const Offset(0, 0),
+            child: Padding(
+              padding: const EdgeInsets.only(
+                bottom: 30.0,
+                left: 25,
+                right: 25,
+              ),
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: GestureDetector(
+                  onTap: () {
+                    if (audioData.currentSong != null) {
+                      userPro.ios == true
+                          ? showCupertinoSheet(
+                              context: context,
+                              pageBuilder: (context) {
+                                return NowPlaying(
+                                  songModel: audioData.currentSong!,
+                                );
+                              },
+                            )
+                          : Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => NowPlaying(
+                                  songModel: audioData.currentSong!,
+                                ),
+                              ),
+                            );
+                    }
+                  },
+                  child: Container(
+                    clipBehavior: Clip.hardEdge,
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withAlpha(20),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Theme.of(context).brightness == Brightness.light
+                            ? Colors.black38
+                            : Colors.white30,
+                        width: 0.5,
+                      ),
                     ),
-                  ),
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Material(
-                          child: Text(
-                            audioData.songName,
-                            maxLines: 2,
-                            overflow: TextOverflow.fade,
-                            style: TextStyle(
-                              color: tcolors,
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 2.5, sigmaY: 2.5),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Card(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            elevation: 5,
+                            child: SizedBox(
+                              height: 60,
+                              width: 60,
+                              child: audioData.currentSong == null
+                                  ? const Icon(Icons.music_note)
+                                  : QueryArtworkWidget(
+                                      key: ValueKey(audioData.currentSong!.id),
+                                      id: audioData.currentSong!.id,
+                                      type: ArtworkType.AUDIO,
+                                      keepOldArtwork: true,
+                                      // request slightly larger artwork for bottom sheet
+                                      size: 120,
+                                      artworkFit: BoxFit.cover,
+                                      artworkBorder: BorderRadius.circular(10),
+                                      nullArtworkWidget: Container(
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[300],
+                                          borderRadius:
+                                              BorderRadius.circular(5),
+                                        ),
+                                        child: Icon(
+                                          Icons.music_note,
+                                          color: Colors.grey[700],
+                                        ),
+                                      ),
+                                    ),
                             ),
                           ),
-                        ),
-                        Material(
-                          child: Text(
-                            "${audioData.currentPosition.inMinutes}:${(audioData.currentPosition.inSeconds % 60).toString().padLeft(2, '0')} / ${audioData.totalDuration.inMinutes}:${(audioData.totalDuration.inSeconds % 60).toString().padLeft(2, '0')}"
-                                .toString()
-                                .padLeft(2, '0'),
-                            style: const TextStyle(
+                          Expanded(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Material(
+                                  color: Colors.transparent,
+                                  child: Text(
+                                    audioData.currentSong?.displayNameWOExt ??
+                                        '',
+                                    maxLines: 2,
+                                    overflow: TextOverflow.fade,
+                                  ),
+                                ),
+                                Material(
+                                  color: Colors.transparent,
+                                  child: Text(
+                                    "${audioData.formatDuration(audioData.position)} / ${audioData.formatDuration(audioData.duration)}",
+                                    style: const TextStyle(
+                                      color: mainColour,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          CupertinoButton(
+                            padding: EdgeInsets.zero,
+                            child: Icon(
+                              !audioData.isPlaying
+                                  ? Icons.play_circle_fill_rounded
+                                  : Icons.pause_circle,
                               color: mainColour,
+                              size: 30,
                             ),
+                            onPressed: () => audioData.playPause(),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                  GestureDetector(
-                    child: Icon(
-                      audioData.isPlaying == false
-                          ? Icons.play_circle
-                          : Icons.pause_circle,
-                      color: mainColour,
-                      size: 30,
-                    ),
-                    onTap: () {
-                      audioData.playSong();
-                    },
-                  ),
-                ],
+                ),
               ),
             ),
-          ),
-        ),
+          )
+        ],
       ),
     );
   }

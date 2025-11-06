@@ -27,16 +27,14 @@ class ThemeProvider extends ChangeNotifier {
     }
   }
 
-  // Load the saved theme from Shared Preferences
   Future<void> _loadTheme() async {
     final prefs = await SharedPreferences.getInstance();
     final themeMode =
-        prefs.getString('theme') ?? 'light'; // Default to light if not set
+        prefs.getString('theme') ?? 'light';
     _themeData = (themeMode == 'dark') ? darkMode : lightMode;
-    notifyListeners(); // Notify listeners to rebuild with the loaded theme
+    notifyListeners();
   }
 
-  // Save the current theme to Shared Preferences
   Future<void> _saveTheme() async {
     final prefs = await SharedPreferences.getInstance();
     final themeMode = (_themeData == darkMode) ? 'dark' : 'light';
