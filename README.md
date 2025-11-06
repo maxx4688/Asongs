@@ -9,19 +9,19 @@ This is an offline music player with all the necessary feature for enjoying your
 
 ## Clone the project
 -  Paste the code below in your terminal to clone the project.
-```json
+```zsh
 git clone https://github.com/maxx4688/Asongs.git
 ```
  -  Create new branch
-```json
+```zsh
 git checkout -b branch_name
 ```
 -  Get the dependencies.
-  ```json
+  ```zsh
   flutter pub get
   ```
 - Lastly run the app
-```json
+```zsh
   flutter run
   ```
  > Make sure to push the changes in your seperate branch to avoid conflicts.
@@ -29,7 +29,7 @@ git checkout -b branch_name
 ## Push your changes
 - In order to push your codes run the below codes in your code editor terminal.
 
-```json
+```zsh
 git add .
 git commit -m "changes comment goes here"
 git push origin your_branch_name
