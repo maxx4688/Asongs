@@ -7,6 +7,8 @@ This is an offline music player with all the necessary feature for enjoying your
 
 > [Get ASongs](https://github.com/maxx4688/Asongs/releases)
 
+ <img src='asongs_playing.png' width='50%'/>
+
 ## Clone the project
 -  Paste the code below in your terminal to clone the project.
 ```zsh
