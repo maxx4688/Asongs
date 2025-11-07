@@ -150,18 +150,24 @@ class _HomePageState extends State<HomePage> {
                           padding: const EdgeInsets.symmetric(horizontal: 10),
                           height: 80,
                           decoration: BoxDecoration(
-                            color: Colors.black.withAlpha(20),
+                            color: userPro.isGrid
+                                ? Colors.white12
+                                : Colors.black.withAlpha(20),
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: Theme.of(context).brightness ==
-                                      Brightness.light
-                                  ? Colors.black38
-                                  : Colors.white30,
-                              width: 0.5,
-                            ),
+                            border: userPro.isGrid
+                                ? null
+                                : Border.all(
+                                    color: Theme.of(context).brightness ==
+                                            Brightness.light
+                                        ? Colors.black38
+                                        : Colors.white30,
+                                    width: 0.5,
+                                  ),
                           ),
                           child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 2.5, sigmaY: 2.5),
+                            filter: userPro.isGrid
+                                ? ImageFilter.blur(sigmaX: 4, sigmaY: 4)
+                                : ImageFilter.blur(sigmaX: 2.5, sigmaY: 2.5),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -181,7 +187,6 @@ class _HomePageState extends State<HomePage> {
                                             id: audioData.currentSong!.id,
                                             type: ArtworkType.AUDIO,
                                             keepOldArtwork: true,
-                                            // request slightly larger artwork for bottom sheet
                                             size: 120,
                                             artworkFit: BoxFit.cover,
                                             artworkBorder:

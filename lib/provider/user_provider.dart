@@ -5,14 +5,23 @@ class UserProvider extends ChangeNotifier {
   String _username = 'ash.';
   bool _ios = false;
   bool _excludeShortSongs = false;
+  bool _isGrid = false;
   String get username => _username;
   bool get ios => _ios;
   bool get excludeShortSongs => _excludeShortSongs;
+  bool get isGrid => _isGrid;
 
   void setName(String username) async {
     final prefs = await SharedPreferences.getInstance();
     prefs.setString("user", username);
     _username = username;
+    notifyListeners();
+  }
+
+  void changeLayout() async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setBool("grid", !_isGrid);
+    _isGrid = !_isGrid;
     notifyListeners();
   }
 
@@ -39,6 +48,7 @@ class UserProvider extends ChangeNotifier {
     _username = prefs.getString("user") ?? "ash.";
     _ios = prefs.getBool("ios") ?? false;
     _excludeShortSongs = prefs.getBool('exclude_short_songs') ?? false;
+    _isGrid = prefs.getBool("grid") ?? false;
     notifyListeners();
   }
 }

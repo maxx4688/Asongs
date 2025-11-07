@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:jobee_server/provider/user_provider.dart';
@@ -87,6 +88,25 @@ class _SettingsPageState extends State<SettingsPage> {
                       Provider.of<AudioPlayerProvider>(context, listen: false);
                   await audioProv.loadSongs();
                 } catch (_) {}
+              },
+            ),
+          ),
+          ListTile(
+            leading: const Icon(
+              Icons.grid_view_rounded,
+              color: mainColour,
+            ),
+            title: const Text("Change Layout"),
+            onTap: () {
+              userPro.changeLayout();
+            },
+            trailing: Switch(
+              activeColor: mainColour,
+              inactiveThumbColor: Colors.black12,
+              trackOutlineColor: const WidgetStatePropertyAll(Colors.black12),
+              value: userPro.isGrid,
+              onChanged: (value) {
+                userPro.changeLayout();
               },
             ),
           ),
