@@ -1,7 +1,7 @@
 # Asongs🎶
 <img src="lib\assets\asong.png" width="30%"/> 
 
-Asongs by [ashish.](https://github.com/maxx4688)
+Asongs by **ashish.**
 
 This is an offline music player with all the necessary feature for enjoying your music.
 
