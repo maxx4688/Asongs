@@ -21,9 +21,129 @@ class _NowPlayingState extends State<NowPlaying> {
   late AudioPlayerProvider audioProvider;
   bool _isSeeking = false;
   double _seekValue = 0.0;
+  bool _isSyncing = false;
 
   bool _isChangingVolume = false;
   double _localVolume = 1.0;
+
+  void _showSpeedPitchSheet(AudioPlayerProvider provider) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.black,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        double tempSpeed = provider.speed;
+        double tempPitch = provider.pitch;
+        return StatefulBuilder(
+          builder: (context, setStateSheet) {
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Speed & pitch',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Spacer(),
+                      CupertinoButton(
+                        sizeStyle: CupertinoButtonSize.small,
+                        color: Colors.white10,
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        child: Text(
+                          _isSyncing ? "Syncing" : "Sync",
+                          style: TextStyle(
+                            color: _isSyncing ? mainColour : null,
+                            fontSize: 13,
+                          ),
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _isSyncing = !_isSyncing;
+                          });
+                          Navigator.of(context).pop();
+                        },
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          provider.setSpeed(1.0);
+                          provider.setPitch(1.0);
+                          Navigator.of(context).pop();
+                        },
+                        child: const Text(
+                          'Reset',
+                          style: TextStyle(color: mainColour),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Speed (${tempSpeed.toStringAsFixed(2)}x)',
+                    style: const TextStyle(color: Colors.white70),
+                  ),
+                  Slider(
+                    value: tempSpeed,
+                    min: 0.7,
+                    max: 1.4,
+                    divisions: 35,
+                    activeColor: mainColour,
+                    inactiveColor: Colors.white24,
+                    onChanged: (v) {
+                      // Snap to nearest 0.02x for a sticky effect
+                      final snapped = (v / 0.02).round() * 0.02;
+                      final clamped = snapped.clamp(0.7, 1.4);
+                      setStateSheet(() => tempSpeed = clamped);
+                      provider.setSpeed(clamped);
+                      if (_isSyncing) {
+                        final snapped = (v / 0.02).round() * 0.02;
+                      final clamped = snapped.clamp(0.7, 1.4);
+                      setStateSheet(() => tempPitch = clamped);
+                      provider.setPitch(clamped);
+                      }
+                    },
+                  ),
+                  if (!_isSyncing)...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Pitch (${tempPitch.toStringAsFixed(2)})',
+                    style: const TextStyle(color: Colors.white70),
+                  ),
+                  Slider(
+                    value: tempPitch,
+                    min: 0.7,
+                    max: 1.4,
+                    // 0.70–1.40 with steps of 0.02 => 35 divisions
+                    divisions: 35,
+                    activeColor: mainColour,
+                    inactiveColor: Colors.white24,
+                    onChanged: (v) {
+                      // Snap to nearest 0.02 for pitch
+                      final snapped = (v / 0.02).round() * 0.02;
+                      final clamped = snapped.clamp(0.7, 1.4);
+                      setStateSheet(() => tempPitch = clamped);
+                      provider.setPitch(clamped);
+                    },
+                  ),
+                  ],
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 
   @override
   void initState() {
@@ -229,6 +349,19 @@ class _NowPlayingState extends State<NowPlaying> {
                             ],
                           ),
                         ),
+                        const SizedBox(width: 12),
+                        CupertinoButton(
+                          padding: const EdgeInsets.all(8),
+                          minSize: 0,
+                          color: Colors.white12,
+                          borderRadius: BorderRadius.circular(50),
+                          child: const Icon(
+                            Icons.tune,
+                            color: Colors.white70,
+                            size: 20,
+                          ),
+                          onPressed: () => _showSpeedPitchSheet(provider),
+                        ),
                       ],
                     ),
                   ),
@@ -341,9 +474,10 @@ class _NowPlayingState extends State<NowPlaying> {
                                       setState(() {
                                         _localVolume = v;
                                       });
+                                      // Apply volume changes in real time while dragging
+                                      provider.setVolume(v);
                                     },
-                                    onChangeEnd: (v) async {
-                                      await provider.setVolume(v);
+                                    onChangeEnd: (v) {
                                       setState(() {
                                         _isChangingVolume = false;
                                       });

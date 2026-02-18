@@ -6,6 +6,7 @@ import 'package:on_audio_query/on_audio_query.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:volume_controller/volume_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 
 class AudioPlayerProvider extends ChangeNotifier {
   final AudioPlayer _player = AudioPlayer();
@@ -16,6 +17,8 @@ class AudioPlayerProvider extends ChangeNotifier {
   Duration _position = Duration.zero;
   Duration _duration = Duration.zero;
   double _volume = 1.0;
+  double _speed = 1.0;
+  double _pitch = 1.0;
 
   List<SongModel> _songs = [];
   SongModel? _currentSong;
@@ -32,6 +35,8 @@ class AudioPlayerProvider extends ChangeNotifier {
   Duration get position => _position;
   Duration get duration => _duration;
   double get volume => _volume;
+  double get speed => _speed;
+  double get pitch => _pitch;
   SongModel? get currentSong => _currentSong;
   List<SongModel> get songs => _songs;
   AudioPlayer get player => _player;
@@ -43,6 +48,12 @@ class AudioPlayerProvider extends ChangeNotifier {
   }
 
   void _init() {
+    // Disable system volume UI for programmatic changes so we can use
+    // our custom in-app slider without the OS volume overlay.
+    try {
+      VolumeController().showSystemUI = false;
+    } catch (_) {}
+
     _positionSubscription = _player.positionStream.listen((pos) {
       _position = pos;
       notifyListeners();
@@ -103,6 +114,26 @@ class AudioPlayerProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> setSpeed(double value) async {
+    _speed = value.clamp(0.7, 1.4);
+    try {
+      await _player.setSpeed(_speed);
+    } catch (e) {
+      debugPrint('Error setting speed: $e');
+    }
+    notifyListeners();
+  }
+
+  Future<void> setPitch(double value) async {
+    _pitch = value.clamp(0.7, 1.4);
+    try {
+      await _player.setPitch(_pitch);
+    } catch (e) {
+      debugPrint('Error setting pitch: $e');
+    }
+    notifyListeners();
+  }
+
   Future<void> loadSongs() async {
     try {
       if (Platform.isAndroid) {
@@ -148,7 +179,17 @@ class AudioPlayerProvider extends ChangeNotifier {
       _currentIndex = _songs.indexOf(song);
 
       await _player.setAudioSource(
-        AudioSource.uri(Uri.parse(song.uri!)),
+        AudioSource.uri(
+          Uri.parse(song.uri!),
+          tag: MediaItem(
+            id: song.id.toString(),
+            title: song.displayNameWOExt,
+            artist: song.artist,
+            artUri: Uri.parse(
+              'content://media/external/audio/albumart/${song.albumId}',
+            ),
+          ),
+        ),
       );
       await _player.play();
       notifyListeners();

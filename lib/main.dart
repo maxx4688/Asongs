@@ -11,17 +11,29 @@ import 'package:on_audio_query/on_audio_query.dart';
 import 'package:jobee_server/provider/audio_provider.dart';
 import 'package:jobee_server/theme/theme_data.dart';
 import 'package:jobee_server/theme/theme_provider.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 import 'package:provider/provider.dart';
 
-void main() {
-  runApp(MultiProvider(
-    providers: [
-      ChangeNotifierProvider(create: (context) => ThemeProvider()),
-      ChangeNotifierProvider(create: (context) => AudioPlayerProvider()),
-      ChangeNotifierProvider(create: (context) => UserProvider()),
-    ],
-    child: const MyApp(),
-  ));
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await JustAudioBackground.init(
+    androidNotificationChannelId: 'com.asongs.playback',
+    androidNotificationChannelName: 'Asongs playback',
+    androidNotificationOngoing: true,
+    androidNotificationIcon: 'mipmap/ic_launcher',
+  );
+
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => ThemeProvider()),
+        ChangeNotifierProvider(create: (context) => AudioPlayerProvider()),
+        ChangeNotifierProvider(create: (context) => UserProvider()),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -47,7 +59,6 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
-    final audioData = Provider.of<AudioPlayerProvider>(context);
     final userPro = Provider.of<UserProvider>(context);
     return Scaffold(
       body: Stack(
@@ -100,159 +111,176 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
-          audioData.currentSong == null
-              ? const SizedBox()
-              : TweenAnimationBuilder<Offset>(
-                  tween: Tween(
-                    begin: const Offset(0, 1),
-                    end: const Offset(0, 0),
-                  ),
-                  duration: const Duration(milliseconds: 400),
-                  curve: Curves.easeOutCubic,
-                  builder: (context, offset, child) {
-                    return Transform.translate(
-                      offset: Offset(0, offset.dy * 80),
-                      child: child,
-                    );
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.only(
-                      bottom: 30.0,
-                      left: 25,
-                      right: 25,
-                    ),
-                    child: Align(
-                      alignment: Alignment.bottomCenter,
-                      child: GestureDetector(
-                        onTap: () {
-                          if (audioData.currentSong != null) {
-                            userPro.ios == true
-                                ? showCupertinoSheet(
-                                    context: context,
-                                    pageBuilder: (context) {
-                                      return NowPlaying(
-                                        songModel: audioData.currentSong!,
-                                      );
-                                    },
-                                  )
-                                : Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => NowPlaying(
-                                        songModel: audioData.currentSong!,
-                                      ),
-                                    ),
-                                  );
-                          }
+          Selector<AudioPlayerProvider, bool>(
+            selector: (_, p) => p.currentSong != null,
+            builder: (context, hasSong, child) {
+              if (!hasSong) return const SizedBox();
+              return TweenAnimationBuilder<Offset>(
+                tween: Tween(
+                  begin: const Offset(0, 1),
+                  end: const Offset(0, 0),
+                ),
+                duration: const Duration(milliseconds: 400),
+                curve: Curves.easeOutCubic,
+                builder: (context, offset, child) {
+                  return Transform.translate(
+                    offset: Offset(0, offset.dy * 80),
+                    child: child,
+                  );
+                },
+                child: child,
+              );
+            },
+            child: const _MiniPlayer(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniPlayer extends StatelessWidget {
+  const _MiniPlayer();
+
+  @override
+  Widget build(BuildContext context) {
+    final userPro = Provider.of<UserProvider>(context);
+
+    return Padding(
+      padding: const EdgeInsets.only(
+        bottom: 30.0,
+        left: 25,
+        right: 25,
+      ),
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: Consumer<AudioPlayerProvider>(
+          builder: (context, audioData, _) {
+            final currentSong = audioData.currentSong;
+            if (currentSong == null) return const SizedBox();
+
+            return GestureDetector(
+              onTap: () {
+                userPro.ios == true
+                    ? showCupertinoSheet(
+                        context: context,
+                        pageBuilder: (context) {
+                          return NowPlaying(
+                            songModel: currentSong,
+                          );
                         },
-                        child: Container(
-                          clipBehavior: Clip.hardEdge,
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
-                          height: 80,
-                          decoration: BoxDecoration(
-                            color: userPro.isGrid
-                                ? Colors.white12
-                                : Colors.black.withAlpha(20),
-                            borderRadius: BorderRadius.circular(20),
-                            border: userPro.isGrid
-                                ? null
-                                : Border.all(
-                                    color: Theme.of(context).brightness ==
-                                            Brightness.light
-                                        ? Colors.black38
-                                        : Colors.white30,
-                                    width: 0.5,
-                                  ),
+                      )
+                    : Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => NowPlaying(
+                            songModel: currentSong,
                           ),
-                          child: BackdropFilter(
-                            filter: userPro.isGrid
-                                ? ImageFilter.blur(sigmaX: 4, sigmaY: 4)
-                                : ImageFilter.blur(sigmaX: 2.5, sigmaY: 2.5),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Card(
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  elevation: 5,
-                                  child: SizedBox(
-                                    height: 60,
-                                    width: 60,
-                                    child: audioData.currentSong == null
-                                        ? const Icon(Icons.music_note)
-                                        : QueryArtworkWidget(
-                                            key: ValueKey(
-                                                audioData.currentSong!.id),
-                                            id: audioData.currentSong!.id,
-                                            type: ArtworkType.AUDIO,
-                                            keepOldArtwork: true,
-                                            size: 120,
-                                            artworkFit: BoxFit.cover,
-                                            artworkBorder:
-                                                BorderRadius.circular(10),
-                                            nullArtworkWidget: Container(
-                                              decoration: BoxDecoration(
-                                                color: Colors.grey[300],
-                                                borderRadius:
-                                                    BorderRadius.circular(5),
-                                              ),
-                                              child: Icon(
-                                                Icons.music_note,
-                                                color: Colors.grey[700],
-                                              ),
-                                            ),
-                                          ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Material(
-                                        color: Colors.transparent,
-                                        child: Text(
-                                          audioData.currentSong
-                                                  ?.displayNameWOExt ??
-                                              '',
-                                          maxLines: 2,
-                                          overflow: TextOverflow.fade,
-                                        ),
-                                      ),
-                                      Material(
-                                        color: Colors.transparent,
-                                        child: Text(
-                                          "${audioData.formatDuration(audioData.position)} / ${audioData.formatDuration(audioData.duration)}",
-                                          style: const TextStyle(
-                                            color: mainColour,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                CupertinoButton(
-                                  padding: EdgeInsets.zero,
-                                  child: Icon(
-                                    !audioData.isPlaying
-                                        ? Icons.play_circle_fill_rounded
-                                        : Icons.pause_circle,
-                                    color: mainColour,
-                                    size: 30,
-                                  ),
-                                  onPressed: () => audioData.playPause(),
-                                ),
-                              ],
+                        ),
+                      );
+              },
+              child: Container(
+                clipBehavior: Clip.hardEdge,
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                height: 80,
+                decoration: BoxDecoration(
+                  color: userPro.isGrid
+                      ? Colors.white12
+                      : Colors.black.withAlpha(20),
+                  borderRadius: BorderRadius.circular(20),
+                  border: userPro.isGrid
+                      ? null
+                      : Border.all(
+                          color: Theme.of(context).brightness ==
+                                  Brightness.light
+                              ? Colors.black38
+                              : Colors.white30,
+                          width: 0.5,
+                        ),
+                ),
+                child: BackdropFilter(
+                  filter: userPro.isGrid
+                      ? ImageFilter.blur(sigmaX: 4, sigmaY: 4)
+                      : ImageFilter.blur(sigmaX: 2.5, sigmaY: 2.5),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Card(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        elevation: 5,
+                        child: SizedBox(
+                          height: 60,
+                          width: 60,
+                          child: QueryArtworkWidget(
+                            key: ValueKey(currentSong.id),
+                            id: currentSong.id,
+                            type: ArtworkType.AUDIO,
+                            keepOldArtwork: true,
+                            size: 120,
+                            artworkFit: BoxFit.cover,
+                            artworkBorder: BorderRadius.circular(10),
+                            nullArtworkWidget: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.grey[300],
+                                borderRadius: BorderRadius.circular(5),
+                              ),
+                              child: Icon(
+                                Icons.music_note,
+                                color: Colors.grey[700],
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
+                      Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Material(
+                              color: Colors.transparent,
+                              child: SizedBox.shrink(),
+                            ),
+                            Material(
+                              color: Colors.transparent,
+                              child: Text(
+                                currentSong.displayNameWOExt,
+                                maxLines: 2,
+                                overflow: TextOverflow.fade,
+                              ),
+                            ),
+                            Material(
+                              color: Colors.transparent,
+                              child: Text(
+                                "${audioData.formatDuration(audioData.position)} / ${audioData.formatDuration(audioData.duration)}",
+                                style: const TextStyle(
+                                  color: mainColour,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      CupertinoButton(
+                        padding: EdgeInsets.zero,
+                        child: Icon(
+                          !audioData.isPlaying
+                              ? Icons.play_circle_fill_rounded
+                              : Icons.pause_circle,
+                          color: mainColour,
+                          size: 30,
+                        ),
+                        onPressed: () => audioData.playPause(),
+                      ),
+                    ],
                   ),
                 ),
-        ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }

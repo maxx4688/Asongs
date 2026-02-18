@@ -62,7 +62,7 @@ class Page1State extends State<Page1> {
                         }
                       },
                       child: Card(
-                        elevation: 3,
+                        elevation: 2,
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadiusGeometry.circular(25)),
                         child: Padding(
@@ -77,9 +77,8 @@ class Page1State extends State<Page1> {
                                   id: songs[index].id,
                                   type: ArtworkType.AUDIO,
                                   keepOldArtwork: true,
-                                  size: 512,
+                                  size: 256,
                                   artworkFit: BoxFit.cover,
-                                  quality: 100,
                                   artworkBorder: BorderRadius.circular(18),
                                   nullArtworkWidget: Container(
                                     decoration: BoxDecoration(
