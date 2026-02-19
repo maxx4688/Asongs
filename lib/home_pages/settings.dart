@@ -75,7 +75,7 @@ class _SettingsPageState extends State<SettingsPage> {
               Icons.audio_file_outlined,
               color: mainColour,
             ),
-            title: const Text('No ringtones'),
+            title: const Text('Exclude short songs'),
             trailing: Switch(
               activeColor: mainColour,
               inactiveThumbColor: Colors.black12,

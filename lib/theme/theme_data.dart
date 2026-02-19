@@ -4,8 +4,9 @@ const mainColour = Color(0xFFFB5824);
 const CardColor = Color(0xFFFEFEFE);
 const LightBGtext = Color(0xFFD7DBE1);
 const DarkText = Color(0xFF748297);
+const String appVersion = "1.0.0";
 ThemeData lightMode = ThemeData(
-  scaffoldBackgroundColor: Color(0xFFF0F2F5),
+  scaffoldBackgroundColor: const Color(0xFFF0F2F5),
   brightness: Brightness.light,
   useMaterial3: true,
   fontFamily: 'poppins',

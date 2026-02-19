@@ -1,9 +1,7 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:on_audio_query/on_audio_query.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:volume_controller/volume_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:just_audio_background/just_audio_background.dart';
@@ -136,12 +134,12 @@ class AudioPlayerProvider extends ChangeNotifier {
 
   Future<void> loadSongs() async {
     try {
-      if (Platform.isAndroid) {
-        final status = await Permission.audio.request();
-        if (status.isDenied) {
-          throw Exception('Storage permission denied');
-        }
-      }
+      // if (Platform.isAndroid) {
+      //   final status = await Permission.audio.request();
+      //   if (status.isDenied) {
+      //     throw Exception('Storage permission denied');
+      //   }
+      // }
 
       final raw = await _audioQuery.querySongs(
         sortType: SongSortType.DATE_ADDED,

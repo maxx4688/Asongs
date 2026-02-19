@@ -6,10 +6,19 @@ class UserProvider extends ChangeNotifier {
   bool _ios = false;
   bool _excludeShortSongs = false;
   bool _isGrid = false;
+  bool _isFirst = true;
   String get username => _username;
   bool get ios => _ios;
   bool get excludeShortSongs => _excludeShortSongs;
   bool get isGrid => _isGrid;
+  bool get isFirst => _isFirst;
+
+  void setIsFirst(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool("isFirst", value);
+    _isFirst = value;
+    notifyListeners();
+  }
 
   void setName(String username) async {
     final prefs = await SharedPreferences.getInstance();
@@ -49,6 +58,7 @@ class UserProvider extends ChangeNotifier {
     _ios = prefs.getBool("ios") ?? false;
     _excludeShortSongs = prefs.getBool('exclude_short_songs') ?? false;
     _isGrid = prefs.getBool("grid") ?? false;
+    _isFirst = prefs.getBool("isFirst") ?? true;
     notifyListeners();
   }
 }

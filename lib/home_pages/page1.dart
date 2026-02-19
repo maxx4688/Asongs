@@ -64,7 +64,8 @@ class Page1State extends State<Page1> {
                       child: Card(
                         elevation: 2,
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadiusGeometry.circular(25)),
+                          borderRadius: BorderRadiusGeometry.circular(25),
+                        ),
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: Stack(
@@ -122,66 +123,66 @@ class Page1State extends State<Page1> {
                               ),
                               if (provider.currentSong?.id == songs[index].id)
                                 Container(
-                                    alignment: Alignment.bottomLeft,
-                                    width: double.infinity,
-                                    clipBehavior: Clip.hardEdge,
-                                    padding:
-                                        const EdgeInsetsDirectional.symmetric(
-                                      horizontal: 10,
-                                      vertical: 7,
+                                  alignment: Alignment.bottomLeft,
+                                  width: double.infinity,
+                                  clipBehavior: Clip.hardEdge,
+                                  padding:
+                                      const EdgeInsetsDirectional.symmetric(
+                                    horizontal: 10,
+                                    vertical: 7,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(18),
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        Colors.white.withAlpha(1),
+                                        Colors.black38,
+                                        Colors.black,
+                                      ],
                                     ),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(18),
-                                      gradient: LinearGradient(
-                                        begin: Alignment.topCenter,
-                                        end: Alignment.bottomCenter,
-                                        colors: [
-                                          Colors.white.withAlpha(1),
-                                          Colors.black38,
-                                          Colors.black,
-                                        ],
-                                      ),
+                                  ),
+                                  child: BackdropFilter(
+                                    filter: ImageFilter.blur(
+                                      sigmaX: 2.5,
+                                      sigmaY: 2.5,
                                     ),
-                                    child: BackdropFilter(
-                                      filter: ImageFilter.blur(
-                                        sigmaX: 2.5,
-                                        sigmaY: 2.5,
-                                      ),
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.end,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          const Text(
-                                            "Playing..",
-                                            maxLines: 1,
-                                            overflow: TextOverflow.fade,
-                                            style: TextStyle(
-                                              color: mainColour,
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 20,
-                                            ),
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          "Playing..",
+                                          maxLines: 1,
+                                          overflow: TextOverflow.fade,
+                                          style: TextStyle(
+                                            color: mainColour,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 20,
                                           ),
-                                          Text(
-                                            songs[index].displayNameWOExt,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.fade,
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                            ),
+                                        ),
+                                        Text(
+                                          songs[index].displayNameWOExt,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.fade,
+                                          style: const TextStyle(
+                                            color: Colors.white,
                                           ),
-                                          Text(
-                                            songs[index].artist!,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.fade,
-                                            style: const TextStyle(
-                                              color: Colors.grey,
-                                            ),
+                                        ),
+                                        Text(
+                                          songs[index].artist!,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.fade,
+                                          style: const TextStyle(
+                                            color: Colors.grey,
                                           ),
-                                        ],
-                                      ),
-                                    )),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                             ],
                           ),
                         ),
@@ -201,6 +202,9 @@ class Page1State extends State<Page1> {
                     return Card(
                       shadowColor: Colors.black26,
                       elevation: 15,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadiusGeometry.circular(15),
+                      ),
                       child: ListTile(
                         leading: QueryArtworkWidget(
                           key: ValueKey(songs[index].id),

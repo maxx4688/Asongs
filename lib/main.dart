@@ -1,5 +1,4 @@
 import 'dart:ui';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:jobee_server/home_pages/page1.dart';
@@ -7,6 +6,7 @@ import 'package:jobee_server/home_pages/page2.dart';
 import 'package:jobee_server/home_pages/settings.dart';
 import 'package:jobee_server/now_playing.dart';
 import 'package:jobee_server/provider/user_provider.dart';
+import 'package:jobee_server/ux/boarding_page.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:jobee_server/provider/audio_provider.dart';
 import 'package:jobee_server/theme/theme_data.dart';
@@ -41,10 +41,11 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final userPro = Provider.of<UserProvider>(context);
     return MaterialApp(
       title: 'Asongs',
       theme: Provider.of<ThemeProvider>(context).themeData,
-      home: const HomePage(),
+      home: userPro.isFirst ? const BoardingPage() : const HomePage(),
     );
   }
 }
