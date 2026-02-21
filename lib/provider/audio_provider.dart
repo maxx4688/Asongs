@@ -22,6 +22,12 @@ class AudioPlayerProvider extends ChangeNotifier {
   SongModel? _currentSong;
   int _currentIndex = -1;
 
+  Timer? _sleepTimer;
+  DateTime? _sleepTimerEnd;
+  static const _maxRecent = 30;
+  List<int> _recentSongIds = [];
+  Set<int> _favouriteIds = {};
+
   StreamSubscription<Duration>? _positionSubscription;
   StreamSubscription<Duration?>? _durationSubscription;
   StreamSubscription<bool>? _playingSubscription;
@@ -40,6 +46,33 @@ class AudioPlayerProvider extends ChangeNotifier {
   AudioPlayer get player => _player;
   bool get hasNext => _currentIndex < _songs.length - 1;
   bool get hasPrevious => _currentIndex > 0;
+
+  bool get isSleepTimerActive => _sleepTimerEnd != null;
+  Duration? get sleepTimerRemaining {
+    if (_sleepTimerEnd == null) return null;
+    final remaining = _sleepTimerEnd!.difference(DateTime.now());
+    return remaining.isNegative ? Duration.zero : remaining;
+  }
+
+  List<SongModel> get recentSongs {
+    final byId = {for (var s in _songs) s.id: s};
+    return _recentSongIds
+        .map((id) => byId[id])
+        .whereType<SongModel>()
+        .toList();
+  }
+
+  List<SongModel> get favouriteSongs =>
+      _songs.where((s) => _favouriteIds.contains(s.id)).toList();
+
+  List<SongModel> get upNextSongs {
+    if (_songs.isEmpty || _currentIndex < 0) return [];
+    final from = _currentIndex + 1;
+    final to = (from + 10).clamp(0, _songs.length);
+    return from < _songs.length ? _songs.sublist(from, to) : [];
+  }
+
+  bool isFavourite(int songId) => _favouriteIds.contains(songId);
 
   AudioPlayerProvider() {
     _init();
@@ -110,6 +143,75 @@ class AudioPlayerProvider extends ChangeNotifier {
     } catch (e) {
       debugPrint('VolumeController init error: $e');
     }
+
+    _loadRecentAndFavourites();
+  }
+
+  Future<void> _loadRecentAndFavourites() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final recent = prefs.getStringList('recent_song_ids');
+      if (recent != null) {
+        _recentSongIds = recent.map((e) => int.tryParse(e) ?? -1).where((id) => id >= 0).toList();
+      }
+      final fav = prefs.getStringList('favourite_song_ids');
+      if (fav != null) {
+        _favouriteIds = fav.map((e) => int.tryParse(e) ?? -1).where((id) => id >= 0).toSet();
+      }
+      notifyListeners();
+    } catch (_) {}
+  }
+
+  void startSleepTimer(Duration duration) {
+    cancelSleepTimer();
+    _sleepTimerEnd = DateTime.now().add(duration);
+    _sleepTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      final remaining = _sleepTimerEnd!.difference(DateTime.now());
+      if (!remaining.isNegative) {
+        notifyListeners();
+        return;
+      }
+      _player.pause();
+      cancelSleepTimer();
+    });
+    notifyListeners();
+  }
+
+  void cancelSleepTimer() {
+    _sleepTimer?.cancel();
+    _sleepTimer = null;
+    _sleepTimerEnd = null;
+    notifyListeners();
+  }
+
+  void toggleFavourite(int songId) {
+    if (_favouriteIds.contains(songId)) {
+      _favouriteIds.remove(songId);
+    } else {
+      _favouriteIds.add(songId);
+    }
+    _persistFavourites();
+    notifyListeners();
+  }
+
+  Future<void> _persistFavourites() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList(
+        'favourite_song_ids',
+        _favouriteIds.map((e) => e.toString()).toList(),
+      );
+    } catch (_) {}
+  }
+
+  Future<void> _persistRecent() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList(
+        'recent_song_ids',
+        _recentSongIds.map((e) => e.toString()).toList(),
+      );
+    } catch (_) {}
   }
 
   Future<void> setSpeed(double value) async {
@@ -175,6 +277,13 @@ class AudioPlayerProvider extends ChangeNotifier {
     try {
       _currentSong = song;
       _currentIndex = _songs.indexOf(song);
+
+      _recentSongIds.remove(song.id);
+      _recentSongIds.insert(0, song.id);
+      if (_recentSongIds.length > _maxRecent) {
+        _recentSongIds = _recentSongIds.sublist(0, _maxRecent);
+      }
+      _persistRecent();
 
       await _player.setAudioSource(
         AudioSource.uri(
@@ -266,6 +375,7 @@ class AudioPlayerProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    _sleepTimer?.cancel();
     _positionSubscription?.cancel();
     _durationSubscription?.cancel();
     _playingSubscription?.cancel();

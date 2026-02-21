@@ -48,7 +48,7 @@ class _NowPlayingState extends State<NowPlaying> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
-                        'Speed & pitch',
+                        'Modify tune',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 18,
@@ -89,7 +89,7 @@ class _NowPlayingState extends State<NowPlaying> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Speed (${tempSpeed.toStringAsFixed(2)}x)',
+                    _isSyncing ? 'Speed & Pitch (${tempSpeed.toStringAsFixed(2)}x)' : 'Speed (${tempSpeed.toStringAsFixed(2)}x)',
                     style: const TextStyle(color: Colors.white70),
                   ),
                   Slider(
@@ -221,9 +221,9 @@ class _NowPlayingState extends State<NowPlaying> {
                         end: Alignment.bottomCenter,
                         colors: [
                           Colors.black.withAlpha(2),
+                          Colors.black38,
                           Colors.black54,
                           Colors.black87,
-                          Colors.black,
                           Colors.black,
                         ],
                       ),
@@ -267,6 +267,20 @@ class _NowPlayingState extends State<NowPlaying> {
                             },
                           ),
                         ),
+                        Consumer<AudioPlayerProvider>(
+                          builder: (context, provider, _) {
+                            final song = provider.currentSong ?? widget.songModel;
+                            final isFav = provider.isFavourite(song.id);
+                            return IconButton(
+                              icon: Icon(
+                                isFav ? Icons.favorite : Icons.favorite_border,
+                                color: isFav ? mainColour : Colors.white54,
+                                size: 28,
+                              ),
+                              onPressed: () => provider.toggleFavourite(song.id),
+                            );
+                          },
+                        ),
                         CupertinoButton(
                           color: Colors.white10,
                           padding: const EdgeInsets.all(8),
@@ -308,6 +322,18 @@ class _NowPlayingState extends State<NowPlaying> {
                           ),
                           onPressed: () => provider.toggleRepeat(),
                         ),
+                        const SizedBox(width: 12),
+                        CupertinoButton(
+                          padding: const EdgeInsets.all(8),
+                          minSize: 0,
+                          color: Colors.white12,
+                          borderRadius: BorderRadius.circular(50),
+                          child: const Icon(
+                            CupertinoIcons.music_note,
+                            color: Colors.white38,
+                          ),
+                          onPressed: () => _showSpeedPitchSheet(provider),
+                        ),
                         Container(
                           margin: const EdgeInsets.symmetric(horizontal: 15),
                           width: 1,
@@ -348,19 +374,6 @@ class _NowPlayingState extends State<NowPlaying> {
                               ),
                             ],
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        CupertinoButton(
-                          padding: const EdgeInsets.all(8),
-                          minSize: 0,
-                          color: Colors.white12,
-                          borderRadius: BorderRadius.circular(50),
-                          child: const Icon(
-                            Icons.tune,
-                            color: Colors.white70,
-                            size: 20,
-                          ),
-                          onPressed: () => _showSpeedPitchSheet(provider),
                         ),
                       ],
                     ),

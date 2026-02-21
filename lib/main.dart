@@ -172,13 +172,14 @@ class _MiniPlayer extends StatelessWidget {
                         },
                       )
                     : Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => NowPlaying(
-                            songModel: currentSong,
-                          ),
-                        ),
-                      );
+                            context,
+                            CupertinoPageRoute(
+                              fullscreenDialog: true,
+                              builder: (context) => NowPlaying(
+                                songModel: currentSong,
+                              ),
+                            ),
+                          );
               },
               child: Container(
                 clipBehavior: Clip.hardEdge,

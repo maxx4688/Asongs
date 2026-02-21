@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:jobee_server/now_playing.dart';
 import 'package:jobee_server/provider/audio_provider.dart';
@@ -53,7 +54,8 @@ class Page1State extends State<Page1> {
                         } else {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(
+                            CupertinoPageRoute(
+                              fullscreenDialog: true,
                               builder: (context) => NowPlaying(
                                 songModel: songs[index],
                               ),
@@ -199,59 +201,63 @@ class Page1State extends State<Page1> {
                   ),
                   itemCount: songs.length,
                   itemBuilder: (context, index) {
-                    return Card(
-                      shadowColor: Colors.black26,
-                      elevation: 15,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadiusGeometry.circular(15),
+                    return ListTile(
+                      leading: QueryArtworkWidget(
+                        key: ValueKey(songs[index].id),
+                        id: songs[index].id,
+                        type: ArtworkType.AUDIO,
+                        keepOldArtwork: true,
+                        artworkBorder: BorderRadius.circular(8),
+                        nullArtworkWidget: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.grey[300],
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                          height: 50,
+                          width: 50,
+                          child: Icon(
+                            Icons.music_note,
+                            color: Colors.grey[700],
+                          ),
+                        ),
                       ),
-                      child: ListTile(
-                        leading: QueryArtworkWidget(
-                          key: ValueKey(songs[index].id),
-                          id: songs[index].id,
-                          type: ArtworkType.AUDIO,
-                          keepOldArtwork: true,
-                          artworkBorder: BorderRadius.circular(8),
-                          nullArtworkWidget: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.grey[300],
-                              borderRadius: BorderRadius.circular(5),
-                            ),
-                            height: 50,
-                            width: 50,
-                            child: Icon(
-                              Icons.music_note,
-                              color: Colors.grey[700],
-                            ),
-                          ),
+                      title: Text(
+                        songs[index].displayNameWOExt,
+                        maxLines: 2,
+                        overflow: TextOverflow.fade,
+                        style: TextStyle(
+                          color: provider.currentSong?.id != songs[index].id
+                              ? null
+                              : mainColour,
                         ),
-                        title: Text(
-                          songs[index].displayNameWOExt,
-                          maxLines: 2,
-                          overflow: TextOverflow.fade,
-                          style: const TextStyle(),
+                      ),
+                      subtitle: Text(
+                        songs[index].artist!,
+                        style: TextStyle(
+                          color: Colors.grey.shade400,
                         ),
-                        subtitle: Text(
-                          songs[index].artist!,
-                          style: const TextStyle(
-                            color: Colors.grey,
-                          ),
-                        ),
-                        onTap: () {
-                          if (provider.currentSong?.id != songs[index].id) {
-                            provider.playSong(songs[index]);
-                          } else {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => NowPlaying(
-                                  songModel: songs[index],
-                                ),
+                      ),
+                      trailing: provider.currentSong?.id == songs[index].id
+                          ? const Icon(
+                              Icons.graphic_eq_rounded,
+                              color: mainColour,
+                            )
+                          : null,
+                      onTap: () {
+                        if (provider.currentSong?.id != songs[index].id) {
+                          provider.playSong(songs[index]);
+                        } else {
+                          Navigator.push(
+                            context,
+                            CupertinoPageRoute(
+                              fullscreenDialog: true,
+                              builder: (context) => NowPlaying(
+                                songModel: songs[index],
                               ),
-                            );
-                          }
-                        },
-                      ),
+                            ),
+                          );
+                        }
+                      },
                     );
                   },
                 );
