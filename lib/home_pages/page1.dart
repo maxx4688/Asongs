@@ -197,7 +197,7 @@ class Page1State extends State<Page1> {
                     top: 100,
                     left: 15,
                     right: 15,
-                    bottom: 60,
+                    bottom: 150,
                   ),
                   itemCount: songs.length,
                   itemBuilder: (context, index) {

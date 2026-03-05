@@ -21,7 +21,7 @@ Future<void> main() async {
     androidNotificationChannelId: 'com.asongs.playback',
     androidNotificationChannelName: 'Asongs playback',
     androidNotificationOngoing: true,
-    androidNotificationIcon: 'mipmap/ic_launcher',
+    androidNotificationIcon: 'mipmap/ic_launcher_foreground',
   );
 
   runApp(

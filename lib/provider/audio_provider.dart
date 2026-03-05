@@ -9,6 +9,8 @@ import 'package:just_audio_background/just_audio_background.dart';
 class AudioPlayerProvider extends ChangeNotifier {
   final AudioPlayer _player = AudioPlayer();
   final OnAudioQuery _audioQuery = OnAudioQuery();
+  final ConcatenatingAudioSource _playlist =
+      ConcatenatingAudioSource(children: []);
 
   bool _isPlaying = false;
   LoopMode _loopMode = LoopMode.off;
@@ -31,6 +33,7 @@ class AudioPlayerProvider extends ChangeNotifier {
   StreamSubscription<Duration>? _positionSubscription;
   StreamSubscription<Duration?>? _durationSubscription;
   StreamSubscription<bool>? _playingSubscription;
+  StreamSubscription<int?>? _indexSubscription;
 
   bool get isPlaying => _isPlaying;
   LoopMode get loopMode => _loopMode;
@@ -101,26 +104,35 @@ class AudioPlayerProvider extends ChangeNotifier {
       notifyListeners();
     });
 
-    // Handle song completion
+    // Handle repeat-one at the end of track; other looping is handled
+    // by just_audio's built-in playlist support.
     _player.processingStateStream.listen((state) {
-      if (state == ProcessingState.completed) {
-        if (_loopMode == LoopMode.one) {
-          _player.seek(Duration.zero);
-          _player.play();
-        } else if (_loopMode == LoopMode.all) {
-          // if loop all, play next or wrap to first
-          if (_songs.isNotEmpty) {
-            if (_currentIndex < _songs.length - 1) {
-              playNext();
-            } else {
-              // wrap to first
-              playSong(_songs[0]);
-            }
-          }
-        } else {
-          playNext();
-        }
+      if (state == ProcessingState.completed && _loopMode == LoopMode.one) {
+        _player.seek(Duration.zero);
+        _player.play();
       }
+    });
+
+    // Keep current index/song and recents in sync with the playlist.
+    _indexSubscription = _player.currentIndexStream.listen((index) {
+      if (index == null || index < 0 || index >= _songs.length) {
+        _currentIndex = -1;
+        _currentSong = null;
+        notifyListeners();
+        return;
+      }
+      _currentIndex = index;
+      final song = _songs[index];
+      _currentSong = song;
+
+      _recentSongIds.remove(song.id);
+      _recentSongIds.insert(0, song.id);
+      if (_recentSongIds.length > _maxRecent) {
+        _recentSongIds = _recentSongIds.sublist(0, _maxRecent);
+      }
+      _persistRecent();
+
+      notifyListeners();
     });
 
     try {
@@ -266,6 +278,29 @@ class AudioPlayerProvider extends ChangeNotifier {
         _songs = raw;
       }
 
+      // Build playlist so the background notification knows about the queue
+      // and can offer next/previous controls.
+      final sources = _songs
+          .where((s) => s.uri != null)
+          .map(
+            (s) => AudioSource.uri(
+              Uri.parse(s.uri!),
+              tag: MediaItem(
+                id: s.id.toString(),
+                title: s.displayNameWOExt,
+                artist: s.artist,
+                artUri: Uri.parse(
+                  'content://media/external/audio/albumart/${s.albumId}',
+                ),
+              ),
+            ),
+          )
+          .toList();
+
+      await _playlist.clear();
+      await _playlist.addAll(sources);
+      await _player.setAudioSource(_playlist);
+
       notifyListeners();
     } catch (e) {
       debugPrint('Error loading songs: $e');
@@ -275,29 +310,13 @@ class AudioPlayerProvider extends ChangeNotifier {
 
   Future<void> playSong(SongModel song) async {
     try {
+      final index = _songs.indexOf(song);
+      if (index < 0) return;
+
       _currentSong = song;
-      _currentIndex = _songs.indexOf(song);
+      _currentIndex = index;
 
-      _recentSongIds.remove(song.id);
-      _recentSongIds.insert(0, song.id);
-      if (_recentSongIds.length > _maxRecent) {
-        _recentSongIds = _recentSongIds.sublist(0, _maxRecent);
-      }
-      _persistRecent();
-
-      await _player.setAudioSource(
-        AudioSource.uri(
-          Uri.parse(song.uri!),
-          tag: MediaItem(
-            id: song.id.toString(),
-            title: song.displayNameWOExt,
-            artist: song.artist,
-            artUri: Uri.parse(
-              'content://media/external/audio/albumart/${song.albumId}',
-            ),
-          ),
-        ),
-      );
+      await _player.seek(Duration.zero, index: index);
       await _player.play();
       notifyListeners();
     } catch (e) {
@@ -314,22 +333,18 @@ class AudioPlayerProvider extends ChangeNotifier {
   }
 
   Future<void> playNext() async {
-    if (_currentSong == null || _songs.isEmpty) return;
-    if (hasNext) {
-      await playSong(_songs[_currentIndex + 1]);
-    } else if (_loopMode == LoopMode.all) {
-      // wrap to first
-      await playSong(_songs[0]);
+    if (_songs.isEmpty) return;
+    if (_player.hasNext) {
+      await _player.seekToNext();
+      await _player.play();
     }
   }
 
   Future<void> playPrevious() async {
-    if (_currentSong == null || _songs.isEmpty) return;
-    if (hasPrevious) {
-      await playSong(_songs[_currentIndex - 1]);
-    } else if (_loopMode == LoopMode.all) {
-      // wrap to last
-      await playSong(_songs[_songs.length - 1]);
+    if (_songs.isEmpty) return;
+    if (_player.hasPrevious) {
+      await _player.seekToPrevious();
+      await _player.play();
     }
   }
 
@@ -379,6 +394,7 @@ class AudioPlayerProvider extends ChangeNotifier {
     _positionSubscription?.cancel();
     _durationSubscription?.cancel();
     _playingSubscription?.cancel();
+    _indexSubscription?.cancel();
     try {
       VolumeController().removeListener();
     } catch (_) {}

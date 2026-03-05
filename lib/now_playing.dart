@@ -27,115 +27,130 @@ class _NowPlayingState extends State<NowPlaying> {
   double _localVolume = 1.0;
 
   void _showSpeedPitchSheet(AudioPlayerProvider provider) {
-    showModalBottomSheet(
+    showCupertinoSheet(
       context: context,
-      backgroundColor: Colors.black,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
+      builder: (ctx) {
         double tempSpeed = provider.speed;
         double tempPitch = provider.pitch;
+
         return StatefulBuilder(
           builder: (context, setStateSheet) {
-            return Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-              child: Column(
+            return CupertinoAlertDialog(
+              title: const Text('Modify tune'),
+              content: Column(
                 mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  const SizedBox(height: 8),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text(
-                        'Modify tune',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const Spacer(),
                       CupertinoButton(
-                        sizeStyle: CupertinoButtonSize.small,
-                        color: Colors.white10,
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 4),
+                        color: CupertinoColors.systemGrey5.withOpacity(0.4),
+                        minSize: 28,
+                        borderRadius: BorderRadius.circular(16),
                         child: Text(
-                          _isSyncing ? "Syncing" : "Sync",
+                          _isSyncing ? 'Syncing' : 'Sync',
                           style: TextStyle(
-                            color: _isSyncing ? mainColour : null,
                             fontSize: 13,
+                            color: _isSyncing
+                                ? CupertinoColors.activeGreen
+                                : CupertinoColors.label,
                           ),
                         ),
                         onPressed: () {
                           setState(() {
                             _isSyncing = !_isSyncing;
                           });
-                          Navigator.of(context).pop();
+                          Navigator.of(ctx).pop();
                         },
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          provider.setSpeed(1.0);
-                          provider.setPitch(1.0);
-                          Navigator.of(context).pop();
-                        },
-                        child: const Text(
-                          'Reset',
-                          style: TextStyle(color: mainColour),
-                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    _isSyncing ? 'Speed & Pitch (${tempSpeed.toStringAsFixed(2)}x)' : 'Speed (${tempSpeed.toStringAsFixed(2)}x)',
-                    style: const TextStyle(color: Colors.white70),
+                    _isSyncing
+                        ? 'Speed & Pitch ${tempSpeed.toStringAsFixed(2)}x'
+                        : 'Speed ${tempSpeed.toStringAsFixed(2)}x',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: CupertinoColors.black,
+                    ),
                   ),
-                  Slider(
-                    value: tempSpeed,
+                  const SizedBox(height: 8),
+                  CupertinoSlider(
                     min: 0.7,
                     max: 1.4,
                     divisions: 35,
-                    activeColor: mainColour,
-                    inactiveColor: Colors.white24,
+                    value: tempSpeed,
                     onChanged: (v) {
-                      // Snap to nearest 0.02x for a sticky effect
                       final snapped = (v / 0.02).round() * 0.02;
                       final clamped = snapped.clamp(0.7, 1.4);
                       setStateSheet(() => tempSpeed = clamped);
                       provider.setSpeed(clamped);
                       if (_isSyncing) {
-                        final snapped = (v / 0.02).round() * 0.02;
-                      final clamped = snapped.clamp(0.7, 1.4);
-                      setStateSheet(() => tempPitch = clamped);
-                      provider.setPitch(clamped);
+                        setStateSheet(() => tempPitch = clamped);
+                        provider.setPitch(clamped);
                       }
                     },
                   ),
-                  if (!_isSyncing)...[
-                  const SizedBox(height: 8),
-                  Text(
-                    'Pitch (${tempPitch.toStringAsFixed(2)})',
-                    style: const TextStyle(color: Colors.white70),
-                  ),
-                  Slider(
-                    value: tempPitch,
-                    min: 0.7,
-                    max: 1.4,
-                    // 0.70–1.40 with steps of 0.02 => 35 divisions
-                    divisions: 35,
-                    activeColor: mainColour,
-                    inactiveColor: Colors.white24,
-                    onChanged: (v) {
-                      // Snap to nearest 0.02 for pitch
-                      final snapped = (v / 0.02).round() * 0.02;
-                      final clamped = snapped.clamp(0.7, 1.4);
-                      setStateSheet(() => tempPitch = clamped);
-                      provider.setPitch(clamped);
-                    },
-                  ),
+                  if (!_isSyncing) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      'Pitch ${tempPitch.toStringAsFixed(2)}',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: CupertinoColors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    CupertinoSlider(
+                      min: 0.7,
+                      max: 1.4,
+                      divisions: 35,
+                      value: tempPitch,
+                      onChanged: (v) {
+                        final snapped = (v / 0.02).round() * 0.02;
+                        final clamped = snapped.clamp(0.7, 1.4);
+                        setStateSheet(() => tempPitch = clamped);
+                        provider.setPitch(clamped);
+                      },
+                    ),
                   ],
+                  const Divider(
+                    color: Colors.grey,
+                    thickness: 0.7,
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      CupertinoButton(
+                        onPressed: () {
+                          provider.setSpeed(1.0);
+                          provider.setPitch(1.0);
+                          Navigator.of(ctx).pop();
+                        },
+                        child: const Text(
+                          'Reset',
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontFamily: "Poppins",
+                          ),
+                        ),
+                      ),
+                      CupertinoButton(
+                        onPressed: () => Navigator.of(ctx).pop(),
+                        child: const Text(
+                          'Done',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontFamily: "Poppins",
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
                 ],
               ),
             );
@@ -267,20 +282,6 @@ class _NowPlayingState extends State<NowPlaying> {
                             },
                           ),
                         ),
-                        Consumer<AudioPlayerProvider>(
-                          builder: (context, provider, _) {
-                            final song = provider.currentSong ?? widget.songModel;
-                            final isFav = provider.isFavourite(song.id);
-                            return IconButton(
-                              icon: Icon(
-                                isFav ? Icons.favorite : Icons.favorite_border,
-                                color: isFav ? mainColour : Colors.white54,
-                                size: 28,
-                              ),
-                              onPressed: () => provider.toggleFavourite(song.id),
-                            );
-                          },
-                        ),
                         CupertinoButton(
                           color: Colors.white10,
                           padding: const EdgeInsets.all(8),
@@ -318,7 +319,7 @@ class _NowPlayingState extends State<NowPlaying> {
                                 : CupertinoIcons.repeat,
                             color: (provider.isRepeatOne || provider.isLoopAll)
                                 ? mainColour
-                                : Colors.white38,
+                                : Colors.white30,
                           ),
                           onPressed: () => provider.toggleRepeat(),
                         ),
@@ -330,9 +331,31 @@ class _NowPlayingState extends State<NowPlaying> {
                           borderRadius: BorderRadius.circular(50),
                           child: const Icon(
                             CupertinoIcons.music_note,
-                            color: Colors.white38,
+                            color: Colors.white30,
                           ),
                           onPressed: () => _showSpeedPitchSheet(provider),
+                        ),
+                        const SizedBox(width: 12),
+                        Consumer<AudioPlayerProvider>(
+                          builder: (context, provider, _) {
+                            final song =
+                                provider.currentSong ?? widget.songModel;
+                            final isFav = provider.isFavourite(song.id);
+                            return CupertinoButton(
+                              padding: const EdgeInsets.all(8),
+                              minSize: 0,
+                              color: Colors.white12,
+                              borderRadius: BorderRadius.circular(50),
+                              child: Icon(
+                                isFav
+                                    ? CupertinoIcons.heart_fill
+                                    : CupertinoIcons.heart,
+                                color: isFav ? mainColour : Colors.white30,
+                              ),
+                              onPressed: () =>
+                                  provider.toggleFavourite(song.id),
+                            );
+                          },
                         ),
                         Container(
                           margin: const EdgeInsets.symmetric(horizontal: 15),
@@ -385,6 +408,7 @@ class _NowPlayingState extends State<NowPlaying> {
                           final duration = provider.duration;
                           final position = provider.position;
                           final max = duration.inMilliseconds.toDouble();
+                          final currentValue = position.inMilliseconds.toDouble();
                           final displayPosition = _isSeeking
                               ? Duration(milliseconds: _seekValue.round())
                               : position;
@@ -426,7 +450,7 @@ class _NowPlayingState extends State<NowPlaying> {
                                 value: _isSeeking
                                     ? _seekValue.clamp(0.0, max > 0 ? max : 1.0)
                                     : (max > 0
-                                        ? position.inMilliseconds.toDouble()
+                                        ? currentValue.clamp(0.0, max)
                                         : 0.0),
                                 onChangeStart: (v) {
                                   setState(() {
