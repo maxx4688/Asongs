@@ -81,15 +81,15 @@ class _PermPageState extends State<PermPage> {
               width: MediaQuery.of(context).size.width * 0.9,
               height: 50,
               child: CupertinoButton(
-                color: Theme.of(context).brightness == Brightness.light
+                color: allowed ? mainColour : Theme.of(context).brightness == Brightness.light
                     ? Colors.black12
                     : Colors.white10,
                 sizeStyle: CupertinoButtonSize.medium,
                 child: Text(
                   !allowed ? "Request Audio Permission" : "Continue",
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'poppins',
-                    color: Colors.grey,
+                    color: allowed ? Colors.white : Colors.grey,
                   ),
                 ),
                 onPressed: () async {

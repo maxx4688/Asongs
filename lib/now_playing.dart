@@ -4,6 +4,7 @@ import 'package:jobee_server/provider/audio_provider.dart';
 import 'package:flutter/services.dart';
 import 'package:jobee_server/theme/theme_data.dart';
 import 'package:on_audio_query/on_audio_query.dart';
+import 'package:palette_generator/palette_generator.dart';
 import 'package:provider/provider.dart';
 
 class NowPlaying extends StatefulWidget {
@@ -27,7 +28,7 @@ class _NowPlayingState extends State<NowPlaying> {
   double _localVolume = 1.0;
 
   void _showSpeedPitchSheet(AudioPlayerProvider provider) {
-    showCupertinoSheet(
+    showCupertinoModalPopup(
       context: context,
       builder: (ctx) {
         double tempSpeed = provider.speed;
@@ -46,7 +47,9 @@ class _NowPlayingState extends State<NowPlaying> {
                     children: [
                       CupertinoButton(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 4),
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
                         color: CupertinoColors.systemGrey5.withOpacity(0.4),
                         minSize: 28,
                         borderRadius: BorderRadius.circular(16),
@@ -160,6 +163,18 @@ class _NowPlayingState extends State<NowPlaying> {
     );
   }
 
+  Future<void> getColors(String url) async {
+  final PaletteGenerator palette = await PaletteGenerator.fromImageProvider(
+    AssetImage(url),
+  );
+
+  Color? dominantColor = palette.dominantColor?.color;
+  Color? vibrantColor = palette.vibrantColor?.color;
+
+  print("Dominant: $dominantColor");
+  print("Vibrant: $vibrantColor");
+}
+
   @override
   void initState() {
     super.initState();
@@ -198,6 +213,7 @@ class _NowPlayingState extends State<NowPlaying> {
                 child: Consumer<AudioPlayerProvider>(
                   builder: (context, provider, _) {
                     final song = provider.currentSong ?? widget.songModel;
+                    // getColors(song.data);
                     return QueryArtworkWidget(
                       id: song.id,
                       type: ArtworkType.AUDIO,
@@ -408,7 +424,8 @@ class _NowPlayingState extends State<NowPlaying> {
                           final duration = provider.duration;
                           final position = provider.position;
                           final max = duration.inMilliseconds.toDouble();
-                          final currentValue = position.inMilliseconds.toDouble();
+                          final currentValue =
+                              position.inMilliseconds.toDouble();
                           final displayPosition = _isSeeking
                               ? Duration(milliseconds: _seekValue.round())
                               : position;
