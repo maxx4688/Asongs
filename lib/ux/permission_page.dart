@@ -89,7 +89,7 @@ class _PermPageState extends State<PermPage> {
                   !allowed ? "Request Audio Permission" : "Continue",
                   style: TextStyle(
                     fontFamily: 'poppins',
-                    color: allowed ? Colors.white : Colors.grey,
+                    color: allowed ? Colors.white : Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white,
                   ),
                 ),
                 onPressed: () async {

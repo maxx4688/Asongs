@@ -51,11 +51,11 @@ class BoardingPage extends StatelessWidget {
                   ? Colors.black12
                   : Colors.white10,
               sizeStyle: CupertinoButtonSize.medium,
-              child: const Text(
+              child: Text(
                 "Continue",
                 style: TextStyle(
                   fontFamily: 'poppins',
-                  color: Colors.grey,
+                  color: Theme.of(context).brightness == Brightness.light ? Colors.black : Colors.white,
                 ),
               ),
               onPressed: () {
